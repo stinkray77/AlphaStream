@@ -1,0 +1,16 @@
+# Ignore Mac system files
+.DS_Store
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore compiled binaries (The engine)
+*.exe
+*.o
+*.dSYM
+main
+engine
+
+# Ignore data files
+*.csv
+
