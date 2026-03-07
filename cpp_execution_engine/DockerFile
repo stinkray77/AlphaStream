@@ -1,0 +1,12 @@
+# Stage 1: Build
+FROM gcc:latest AS builder
+RUN apt-get update && apt-get install -y cmake libzmq3-dev
+COPY . /app
+WORKDIR /app/build
+RUN cmake .. && make
+
+# Stage 2: Run
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y libzmq5
+COPY --from=builder /app/build/execution_engine /usr/local/bin/execution_engine
+CMD ["execution_engine"]

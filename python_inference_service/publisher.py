@@ -14,16 +14,23 @@ context = zmq.Context()
 zmq_socket = context.socket(zmq.PUB)
 zmq_socket.bind("tcp://*:5555")
 
-# 1. Load FinBERT Model and Tokenizer (This may take a minute on first run)
-print("Loading FinBERT model from Hugging Face...")
-tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
-model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert")
+# 1. Check for Apple Silicon GPU (MPS) or NVIDIA (CUDA)
+device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+# Use the 'device_map' and 'low_cpu_mem_usage' flags to speed up initialization
+print("Initializing FinBERT (this may take a moment to verify checksums)...")
 
+tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
+model = AutoModelForSequenceClassification.from_pretrained(
+    "ProsusAI/finbert",
+    low_cpu_mem_usage=True, # Optimizes RAM during the load phase
+    device_map="auto"       # Automatically finds your Mac's GPU if available
+)
 async def news_handler(data):
     headline = data.headline
     
-    # 2. Perform Inference (AI Analysis)
-    inputs = tokenizer(headline, return_tensors="pt", padding=True, truncation=True)
+    # Move inputs to the GPU
+    inputs = tokenizer(headline, return_tensors="pt", padding=True, truncation=True).to(device)
+    
     with torch.no_grad():
         outputs = model(**inputs)
         

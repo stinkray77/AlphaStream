@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  inference-service:
+    build: ./python_inference_service
+    env_file: ./python_inference_service/.env
+    networks:
+      - trading-net
+
+  execution-engine:
+    build: ./cpp_execution_engine
+    depends_on:
+      - inference-service
+    networks:
+      - trading-net
+
+networks:
+  trading-net:
+    driver: bridge

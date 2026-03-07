@@ -17,7 +17,7 @@ int main()
 {
     zmq::context_t context(1);
     zmq::socket_t socket(context, zmq::socket_type::sub);
-    socket.connect("tcp://localhost:5555");
+    socket.connect("tcp://inference-service:5555");
     socket.set(zmq::sockopt::subscribe, "");
 
     OrderBook limit_order_book;
