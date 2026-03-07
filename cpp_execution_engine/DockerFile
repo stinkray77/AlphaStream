@@ -1,12 +1,28 @@
-# Stage 1: Build
-FROM gcc:latest AS builder
-RUN apt-get update && apt-get install -y cmake libzmq3-dev
+# Stage 1: Build 
+FROM debian:bookworm AS builder
+
+# Added pkg-config to the install list
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    pkg-config \
+    libzmq3-dev \
+    nlohmann-json3-dev
+
 COPY . /app
+WORKDIR /app
+
+# Clean and Build
+RUN rm -rf build && mkdir build
 WORKDIR /app/build
 RUN cmake .. && make
 
-# Stage 2: Run
+# Stage 2: Run 
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y libzmq5
+RUN apt-get update && apt-get install -y \
+    libzmq5 \
+    libstdc++6 \
+    libc6
+
 COPY --from=builder /app/build/execution_engine /usr/local/bin/execution_engine
 CMD ["execution_engine"]
