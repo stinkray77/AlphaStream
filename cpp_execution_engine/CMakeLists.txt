@@ -8,11 +8,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Add Homebrew paths explicitly for macOS (Covers both Apple Silicon and Intel)
-list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew" "/usr/local")
+# 1. Tell CMake to use pkg-config
+find_package(PkgConfig REQUIRED)
 
-# Now CMake can successfully find the packages
-find_package(ZeroMQ REQUIRED)
+# 2. Use pkg-config to find the ZeroMQ C library (libzmq)
+pkg_check_modules(ZeroMQ REQUIRED libzmq)
+
+# 3. Add Homebrew prefix so CMake can find the C++ wrapper (cppzmq)
+list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew" "/usr/local")
 find_package(cppzmq REQUIRED)
 
 set(COMPILER_FLAGS
@@ -31,5 +34,6 @@ set(SOURCES
 add_executable(execution_engine ${SOURCES})
 target_compile_options(execution_engine PRIVATE ${COMPILER_FLAGS})
 
-# Link against the cppzmq target
-target_link_libraries(execution_engine PRIVATE cppzmq)
+# 4. Link the include directories and libraries found by pkg-config and cppzmq
+target_include_directories(execution_engine PRIVATE ${ZeroMQ_INCLUDE_DIRS})
+target_link_libraries(execution_engine PRIVATE cppzmq ${ZeroMQ_LIBRARIES})
