@@ -1,0 +1,12 @@
+# Ignore local C++ build artifacts
+**/build/
+**/CMakeFiles/
+CMakeCache.txt
+
+# Ignore local Python environments
+**/.venv/
+**/__pycache__/
+**.pyc
+
+# Ignore local OS junk
+.DS_Store
