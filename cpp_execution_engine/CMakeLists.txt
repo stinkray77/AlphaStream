@@ -11,6 +11,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # 1. Tell CMake to use pkg-config
 find_package(PkgConfig REQUIRED)
 
+find_package(nlohmann_json REQUIRED)
+
 # 2. Use pkg-config to find the ZeroMQ C library (libzmq)
 pkg_check_modules(ZeroMQ REQUIRED libzmq)
 
@@ -36,4 +38,4 @@ target_compile_options(execution_engine PRIVATE ${COMPILER_FLAGS})
 
 # 4. Link the include directories and libraries found by pkg-config and cppzmq
 target_include_directories(execution_engine PRIVATE ${ZeroMQ_INCLUDE_DIRS})
-target_link_libraries(execution_engine PRIVATE cppzmq ${ZeroMQ_LIBRARIES})
+target_link_libraries(execution_engine PRIVATE cppzmq ${ZeroMQ_LIBRARIES} nlohmann_json::nlohmann_json)

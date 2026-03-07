@@ -1,31 +1,40 @@
 import zmq
 import json
 import time
+import random
 
 def start_publisher():
     context = zmq.Context()
+    # Create a Publisher socket
     socket = context.socket(zmq.PUB)
     
-    # Bind to port 5555. Using TCP allows Docker containers to communicate.
+    # Bind to all interfaces on port 5555
     socket.bind("tcp://*:5555")
     
-    print("ZeroMQ Publisher bound to port 5555. Waiting for subscribers...")
-    time.sleep(1) # Brief pause to allow subscribers to connect
+    print("Python Inference Publisher bound to port 5555.")
+    print("Waiting 3 seconds for C++ subscribers to connect...")
+    time.sleep(3) 
 
-    # Simulated output from your Hugging Face NLP model
-    signal_payload = {
-        "ticker": "AAPL",
-        "sentiment_score": 0.85,
-        "action": "BUY"
-    }
+    tickers = ["AAPL", "MSFT", "TSLA", "NVDA"]
     
-    # ZeroMQ PUB-SUB uses topic filtering. We prefix the message with the topic "SIGNAL"
-    message = f"SIGNAL {json.dumps(signal_payload)}"
-    
+    print("Starting mock sentiment stream...")
     while True:
+        # Simulate a random sentiment signal
+        payload = {
+            "ticker": random.choice(tickers),
+            "sentiment_score": round(random.uniform(-1.0, 1.0), 2),
+            "action": "BUY" if random.random() > 0.5 else "SELL"
+        }
+        
+        # Prefix the topic "SIGNAL " so the C++ engine knows to process it
+        message = f"SIGNAL {json.dumps(payload)}"
+        
+        # Broadcast the message
         socket.send_string(message)
-        print(f"Broadcasted: {message}")
-        time.sleep(2) # Simulating a stream of incoming news
+        print(f"[PUBLISHED] {message}")
+        
+        # Stream a new signal every 1 second
+        time.sleep(1)
 
 if __name__ == "__main__":
     start_publisher()
