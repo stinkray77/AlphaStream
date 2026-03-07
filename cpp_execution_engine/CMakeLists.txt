@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 
+find_package(ZeroMQ REQUIRED)
+find_package(cppzmq REQUIRED)
+
 # Define the project and the language (C++)
 project(AlphaStream_ExecutionEngine
         VERSION 1.0.0
@@ -35,3 +38,6 @@ target_compile_options(execution_engine PRIVATE ${COMPILER_FLAGS})
 
 # Tell CMake where to find your header files (e.g., OrderBook.h)
 target_include_directories(execution_engine PRIVATE include/)
+
+target_link_libraries(execution_engine PRIVATE libzmq)
+target_link_libraries(execution_engine PRIVATE cppzmq)
