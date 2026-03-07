@@ -1,40 +1,56 @@
 import zmq
 import json
-import time
-import random
+import asyncio
+from alpaca.data.live import NewsDataStream
+import os
+from dotenv import load_dotenv
 
-def start_publisher():
-    context = zmq.Context()
-    # Create a Publisher socket
-    socket = context.socket(zmq.PUB)
-    
-    # Bind to all interfaces on port 5555
-    socket.bind("tcp://*:5555")
-    
-    print("Python Inference Publisher bound to port 5555.")
-    print("Waiting 3 seconds for C++ subscribers to connect...")
-    time.sleep(3) 
+load_dotenv() # This loads the variables from your .env file
 
-    tickers = ["AAPL", "MSFT", "TSLA", "NVDA"]
+API_KEY = os.getenv("ALPACA_API_KEY")
+SECRET_KEY = os.getenv("ALPACA_SECRET_KEY")
+
+print(f"Attempting Auth with Key: {API_KEY[:5]}*****") # Print first 5 chars to verify load
+
+# ZeroMQ Setup
+context = zmq.Context()
+zmq_socket = context.socket(zmq.PUB)
+zmq_socket.bind("tcp://*:5555")
+
+
+async def news_handler(data):
+    """
+    This function runs every time a new headline arrives via the websocket.
+    """
+    # For now, we will pass the headline to ZeroMQ. 
+    # In the next phase, we'll put the Hugging Face model here to analyze it.
+    payload = {
+        "ticker": data.symbols[0] if data.symbols else "GENERIC",
+        "headline": data.headline,
+        "sentiment_score": 0.0, # Placeholder until Phase 7
+        "action": "NEUTRAL"    # Placeholder until Phase 7
+    }
     
-    print("Starting mock sentiment stream...")
-    while True:
-        # Simulate a random sentiment signal
-        payload = {
-            "ticker": random.choice(tickers),
-            "sentiment_score": round(random.uniform(-1.0, 1.0), 2),
-            "action": "BUY" if random.random() > 0.5 else "SELL"
-        }
-        
-        # Prefix the topic "SIGNAL " so the C++ engine knows to process it
-        message = f"SIGNAL {json.dumps(payload)}"
-        
-        # Broadcast the message
-        socket.send_string(message)
-        print(f"[PUBLISHED] {message}")
-        
-        # Stream a new signal every 1 second
-        time.sleep(1)
+    message = f"SIGNAL {json.dumps(payload)}"
+    zmq_socket.send_string(message)
+    print(f"[LIVE NEWS] Broadcasted: {data.headline}")
+
+async def main():
+
+    # Initialize the Alpaca News Stream
+    stream = NewsDataStream(
+        api_key=os.getenv("ALPACA_API_KEY"), 
+        secret_key=os.getenv("ALPACA_SECRET_KEY")
+    )
+    
+    # Subscribe to all news (or specific symbols like ["AAPL", "TSLA"])
+    stream.subscribe_news(news_handler, "*")
+    
+    print("Alpaca Websocket started. Listening for live news...")
+    await stream._run_forever()
 
 if __name__ == "__main__":
-    start_publisher()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Stream stopped.")
