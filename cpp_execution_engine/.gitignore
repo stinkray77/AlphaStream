@@ -14,3 +14,4 @@ engine
 # Ignore data files
 *.csv
 
+*.vscode
